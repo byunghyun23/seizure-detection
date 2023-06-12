@@ -3,6 +3,7 @@ import h5py
 import pyedflib
 import numpy as np
 import scipy.signal as stft_
+import os
 
 each_real_seizure = []
 each_real_none_seizure = []
@@ -347,7 +348,10 @@ def makedataset(data_path, signal, label, time, channels, sampling_rate, window_
     data_path = data_path.replace(edf_file_name, '')
 
     if len(seizure_data) != 0:
-        hf = h5py.File(data_path + '\\h5\\' + edf_file_name, 'w')
+        if not os.path.exists(data_path):
+            os.mkdir(data_path)
+
+        hf = h5py.File(data_path + '\\' + edf_file_name, 'w')
         hf.create_dataset('seizure_data', data=seizure_data)
         hf.create_dataset('seizure_label', data=seizure_label)
         hf.create_dataset('seizure_time', data=seizure_time)

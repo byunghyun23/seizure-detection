@@ -61,7 +61,7 @@ def generate_model(model_shape):
 
     a_2 = Permute((1, 3, 2))(cnn_2)
     a_2 = Dense(cnn_2.shape[2], activation='sigmoid')(a_2)
-    a_probs_2 = Permute((1, 3, 2), name='attention_vec')(a_2)
+    a_probs_2 = Permute((1, 3, 2), name='attention_vec_2')(a_2)
 
     output_atteintion_mul_2 = Multiply()([cnn_2, a_probs_2])
     max_pool_2 = MaxPooling2D()(output_atteintion_mul_2)
@@ -108,10 +108,15 @@ def scheduler(epoch):
     return 1e-3
 
 def train(train_patient_list, test_patient, time, mode, train_files, test_files, k, epoch, batch_size):
+    dir_path = '.\\model\\{patient}\\'.format(model=mode, time=time, patient=test_patient)
+    if not os.path.exists(dir_path):
+        os.mkdir(dir_path)
+
+
     print('[TRAIN] train_patient_list, test_patient, mode, time > ', train_patient_list, test_patient, mode, time, 'start..')
     df = pd.DataFrame()
 
-    train_path = '.\\preprocess\\{patient}\\h5\\train\\{file}'
+    train_path = '.\\preprocess\\{patient}\\{file}'
 
     # Load and train the rest of the data except for test_patient
     for round in range(len(test_files)):
@@ -149,7 +154,7 @@ def train(train_patient_list, test_patient, time, mode, train_files, test_files,
         my_model = generate_model(X_train.shape[1:])
 
         tf.keras.utils.plot_model(my_model,
-                                  to_file='model_plot.png',
+                                  to_file='model/model_plot.png',
                                   show_shapes=True,
                                   )
         model_list = [my_model]
@@ -192,11 +197,7 @@ def train(train_patient_list, test_patient, time, mode, train_files, test_files,
 
                 target_model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=METRICS)
 
-                ckpt = '.\\model\\{model}\\{patient}\\'.format(model=mode, time=time, patient=test_patient)
-                ckpt = ckpt + target_model.name + '_' + test_patient + '.h5'
-
-                ckpt = '.\\model\\{model}\\{patient}\\'.format(model=mode, time=time,
-                                                                                 patient=test_patient)
+                ckpt = dir_path
                 ckpt = ckpt + target_model.name + '_' + str(kfold) + '_' + test_patient + '.h5'
 
                 global patience
@@ -306,16 +307,15 @@ def test(train_patient_list, test_patient, time, mode, test_files, k):
     if test_patient == 'chb16':
         return
 
+    # Cross Patient Specific Method
     global test_result
-    # ############################################################# #
-    # test_patient 기준 나머지 데이터로 학습한 모델을 사용하여 결과 csv 출력 #
-    # ############################################################# #
 
-    print('[TEST] train_patient_list, test_patient, mode, time > ', train_patient_list, test_patient, mode, time, '시작')
+
+    print('[TEST] train_patient_list, test_patient, mode, time > ', train_patient_list, test_patient, mode, time, 'start..')
 
     df = pd.DataFrame()
 
-    path = '.\\preprocess\\{test_patient}\\h5\\train\\{file}'
+    path = '.\\preprocess\\{test_patient}\\{file}'
 
     # predict
     for round_ in range(len(test_files)):
@@ -348,7 +348,7 @@ def test(train_patient_list, test_patient, time, mode, test_files, k):
             Y_test = np.argmax(Y_test, axis=1)
             # Y_label = np.argmax(Y_test, axis=1)
 
-            ckpt = '.\\model\\{model}\\{patient}\\'.format(model=mode, time=time, patient=test_patient)
+            ckpt = '.\\model\\{patient}\\'.format(time=time, patient=test_patient)
 
             Y_pred_list = []
             Y_pred_avg_list = []
@@ -511,8 +511,8 @@ def test(train_patient_list, test_patient, time, mode, test_files, k):
             roc_auc_micro = roc_auc_score(Y_label, Y_pred, average='micro')
             roc_auc_macro = roc_auc_score(Y_label, Y_pred, average='macro')
 
-            temp_df.append([str(train_patient_list), test_patient, mode, time, 'Ensemble', ckpt, tn, fp, fn, tp,
-                            sen,
+            temp_df.append([str(train_patient_list), test_patient, mode, time, 'Hard Voting', ckpt, tn, fp, fn, tp,
+                            str(round((sen * 100), 0)),
                             spe, ppv, str(round(fpr, 3)), acc, f1_micro, roc_auc_micro, f1_macro, roc_auc_macro])
 
 
@@ -554,20 +554,19 @@ def test(train_patient_list, test_patient, time, mode, test_files, k):
             roc_auc_micro = roc_auc_score(Y_label, Y_pred, average='micro')
             roc_auc_macro = roc_auc_score(Y_label, Y_pred, average='macro')
 
-            temp_df.append([str(train_patient_list), test_patient, mode, time, 'Ensemble', ckpt, tn, fp, fn, tp,
+            temp_df.append([str(train_patient_list), test_patient, mode, time, 'Soft Voting', ckpt, tn, fp, fn, tp,
                             str(round((sen * 100), 0)),
                             spe, ppv, str(round(fpr, 3)), acc, f1_micro, roc_auc_micro, f1_macro, roc_auc_macro])
 
             K.clear_session()
 
             df = pd.DataFrame(temp_df)
-            dir_path = '.\\output\\{model}'.format(model=mode)
+            dir_path = '.\\output'
 
             if not os.path.exists(dir_path):
                 os.mkdir(dir_path)
 
-            csv_path = '.\\output\\{model}\\test_{test_patient}_{time}.csv'.format(
-                model=mode, test_patient=test_patient, time=time)
+            csv_path = '.\\output\\test_{test_patient}_{time}.csv'.format(test_patient=test_patient, time=time)
 
             df.columns = ['train_patient', 'test_patient', 'mode', 'time', 'round', 'ckpt',
                           'tn', 'fp', 'fn', 'tp', 'sen',
@@ -621,7 +620,7 @@ for chb in chb_list:
         for kn in range(len(chb_list) - 1):
             train_patient = chb_list[(index + kn + 1) % chb_list_len]
 
-            train_path = ".\\preprocess\\" + train_patient + "\\h5\\train\\"
+            train_path = ".\\preprocess\\" + train_patient + "\\"
 
             chb_train_files = os.listdir(os.path.join(train_path, ''))
             chb_train_files.sort()
@@ -638,7 +637,7 @@ for chb in chb_list:
             train_patient_list.append(train_patient)
             train_files.append(file_list)
 
-        path = ".\\preprocess\\" + test_patient + "\\h5\\train\\"
+        path = ".\\preprocess\\" + test_patient + "\\"
 
         files = os.listdir(os.path.join(path, ''))
         files.sort()
