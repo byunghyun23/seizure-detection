@@ -34,6 +34,6 @@ After training, you can get CNN-Attention models for each patient and performanc
 --model
 --output
 ```
-Patients with epileptic seizure duration of less than 30 seconds (chb06, chb16) were excluded from this paper.
+Patients with epileptic seizure duration of less than 30 seconds (chb06, chb16) were excluded from this project.
 
 ![image](https://github.com/byunghyun23/seizure-detection/blob/main/assets/fig2.PNG)
