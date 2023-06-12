@@ -2,8 +2,8 @@
 
 ## Introduction
 This is a TensorFlow implementation for A CNN-Attention Model for Epileptic Seizure Detection.  
-This work has been published in [IEEE Student Paper Contest 2021](https://github.com/byunghyun23/seizure-detection).  
-Please refer to the [paper](https://github.com/byunghyun23/seizure-detection) and the prize(https://github.com/byunghyun23/seizure-detection).
+This work has been published in [IEEE Student Paper Contest 2021](https://github.com/byunghyun23/seizure-detection/blob/main/assets/program.pdf).  
+Please refer to the [paper](https://github.com/byunghyun23/seizure-detection/blob/main/assets/paper.pdf) and the [prize](https://github.com/byunghyun23/seizure-detection/blob/main/assets/prize.pdf).
 
 ![image](https://github.com/byunghyun23/seizure-detection/blob/main/assets/fig1.PNG)
 
